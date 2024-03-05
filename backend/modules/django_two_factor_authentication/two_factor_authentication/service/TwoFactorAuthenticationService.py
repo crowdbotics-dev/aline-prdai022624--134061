@@ -6,8 +6,12 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from twilio.rest import Client
 
-from modules.django_two_factor_authentication.two_factor_authentication.models import TwoFactorAuth
-from modules.django_two_factor_authentication.two_factor_authentication.utils import get_time_diff
+from modules.django_two_factor_authentication.two_factor_authentication.models import (
+    TwoFactorAuth,
+)
+from modules.django_two_factor_authentication.two_factor_authentication.utils import (
+    get_time_diff,
+)
 
 User = get_user_model()
 
@@ -34,7 +38,9 @@ class TwoFactorAuthenticationService:
                     from_email=settings.EMAIL,
                     to_emails=user.email,
                     subject=settings.EMAIL_SUBJECT,
-                    html_content="Your OTP code is {}. Don't share with anyone.".format(otp_code)
+                    html_content="Your OTP code is {}. Don't share with anyone.".format(
+                        otp_code
+                    ),
                 )
                 sg_client = SendGridAPIClient(settings.SENDGRID_API_KEY)
                 sg_client.send(message)
@@ -44,7 +50,9 @@ class TwoFactorAuthenticationService:
                 client.messages.create(
                     from_=settings.PHONE,
                     to=str(user.phone_number),
-                    body="Your OTP code is {}. Don't share with anyone.".format(otp_code)
+                    body="Your OTP code is {}. Don't share with anyone.".format(
+                        otp_code
+                    ),
                 )
                 message = "Verification code has been sent to your Phone number"
             TwoFactorAuth.objects.create(user=user, method=method, code=otp_code)
@@ -58,8 +66,10 @@ class TwoFactorAuthenticationService:
         The google_authenticator method generates a QR code link that corresponds to a unique code.
         """
         try:
-            link = pyotp.TOTP(settings.TOTP_SECRET).provisioning_uri(name=user.email, issuer_name="2FA")
-            return {"data": {"link": link}, 'status': status.HTTP_200_OK}
+            link = pyotp.TOTP(settings.TOTP_SECRET).provisioning_uri(
+                name=user.email, issuer_name="2FA"
+            )
+            return {"data": {"link": link}, "status": status.HTTP_200_OK}
         except Exception as e:
             return {"data": {"error": e.args}, "status": status.HTTP_400_BAD_REQUEST}
 
@@ -76,13 +86,22 @@ class TwoFactorAuthenticationService:
             totp_code = pyotp.TOTP(settings.TOTP_SECRET).now()
             if totp_code == str(otp):
                 return {"data": {"message": "Verified"}, "status": status.HTTP_200_OK}
-            return {"data": {"error": ["Code expired"]}, "status": status.HTTP_400_BAD_REQUEST}
+            return {
+                "data": {"error": ["Code expired"]},
+                "status": status.HTTP_400_BAD_REQUEST,
+            }
         else:
             try:
                 result = TwoFactorAuth.objects.get(user=user, code=otp)
             except TwoFactorAuth.DoesNotExist:
-                return {"data": {"error": ["Invalid Code."]}, "status": status.HTTP_400_BAD_REQUEST}
+                return {
+                    "data": {"error": ["Invalid Code."]},
+                    "status": status.HTTP_400_BAD_REQUEST,
+                }
             result.delete()
             if get_time_diff(result.created_at) <= settings.OTP_EXPIRATION_TIME:
                 return {"data": {"message": "Verified"}, "status": status.HTTP_200_OK}
-            return {"data": {"error": ["Code expired"]}, "status": status.HTTP_400_BAD_REQUEST}
+            return {
+                "data": {"error": ["Code expired"]},
+                "status": status.HTTP_400_BAD_REQUEST,
+            }
