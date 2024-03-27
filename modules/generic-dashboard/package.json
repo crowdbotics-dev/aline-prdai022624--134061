@@ -1,0 +1,9 @@
+{
+  "name": "@modules/generic-dashboard",
+  "version": "1.0.0",
+  "description": "This is a starter module that allows you to create a generic dashboard for your data. You can use this as a starting point for your own custom dashboard.",
+  "private": true,
+  "main": "index.js",
+  "license": "MIT",
+  "author": "Jason Kozel"
+}
